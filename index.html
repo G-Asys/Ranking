@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ranking Colocación</title>
+</head>
+<body>
+<title>Ranking Colocación</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: barra fija (sponsor → año → mes → supervisor → oficina → buscar) → KPIs → tarjetas de oficina o tabla de una oficina.
+   Acento por sponsor; medallas oro/plata/bronce para el top 3. */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f7f9fc; --surface-3:#eef2f7;
+  --fg:#172031; --muted:#5c6779; --faint:#8a94a4; --border:#e0e6ef; --border-strong:#cdd6e2;
+  --accent-bcr:#1763a6; --accent-bncr:#0e7c6b; --accent-coopenae:#6d4ac0; --accent-coopeande:#2f8f3e; --accent-bp:#c0442e;
+  --soft-bncr:#e1f3ee; --soft-bcr:#e7f0f9; --soft-coopenae:#efe9fb; --soft-coopeande:#e6f4e9; --soft-bp:#fdeae6;
+  --accent:#0e7c6b; --accent-soft:var(--soft-bncr);
+  --gold:#c99700; --silver:#7f8a9b; --bronze:#b26a35;
+  --good:#1f9d6b; --warn:#b8791b; --warn-bg:#fdf3e2;
+  --shadow:0 1px 2px rgba(23,32,49,.06), 0 4px 16px rgba(23,32,49,.05);
+  --r:14px;
+  --f-display:'Archivo', system-ui, sans-serif;
+  --f-body:'IBM Plex Sans', system-ui, sans-serif;
+}
+body[data-sponsor="bcr"]{--accent:var(--accent-bcr); --accent-soft:var(--soft-bcr);}
+body[data-sponsor="bncr"]{--accent:var(--accent-bncr); --accent-soft:var(--soft-bncr);}
+body[data-sponsor="coopenae"]{--accent:var(--accent-coopenae); --accent-soft:var(--soft-coopenae);}
+body[data-sponsor="coopeande"]{--accent:var(--accent-coopeande); --accent-soft:var(--soft-coopeande);}
+body[data-sponsor="bp"]{--accent:var(--accent-bp); --accent-soft:var(--soft-bp);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e131b; --surface:#161d28; --surface-2:#1a2230; --surface-3:#222b3b;
+  --fg:#e8edf4; --muted:#9ba7b8; --faint:#6b7585; --border:#28313f; --border-strong:#36414f;
+  --accent-bcr:#4a9be0; --accent-bncr:#36c3a8; --accent-coopenae:#a68bf0; --accent-coopeande:#52c266; --accent-bp:#e0765c;
+  --soft-bncr:#102a24; --soft-bcr:#132536; --soft-coopenae:#1e1733; --soft-coopeande:#11261a; --soft-bp:#2a1812;
+  --accent:#36c3a8; --accent-soft:var(--soft-bncr);
+  --gold:#e3b43a; --silver:#9aa6b7; --bronze:#cf8a56;
+  --good:#3fc08c; --warn:#d99f42; --warn-bg:#2a2214;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e131b; --surface:#161d28; --surface-2:#1a2230; --surface-3:#222b3b;
+  --fg:#e8edf4; --muted:#9ba7b8; --faint:#6b7585; --border:#28313f; --border-strong:#36414f;
+  --accent-bcr:#4a9be0; --accent-bncr:#36c3a8; --accent-coopenae:#a68bf0; --accent-coopeande:#52c266; --accent-bp:#e0765c;
+  --soft-bncr:#102a24; --soft-bcr:#132536; --soft-coopenae:#1e1733; --soft-coopeande:#11261a; --soft-bp:#2a1812;
+  --accent:#36c3a8; --accent-soft:var(--soft-bncr);
+  --gold:#e3b43a; --silver:#9aa6b7; --bronze:#cf8a56;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg); color:var(--fg); font-family:var(--f-body); line-height:1.45; margin:0; -webkit-font-smoothing:antialiased;}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:30; background:var(--surface);}
+h1,h2,h3{font-family:var(--f-display); margin:0; text-wrap:balance; letter-spacing:-.01em;}
+.tnum{font-variant-numeric:tabular-nums;}
+
+.bar{position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--surface); border-bottom:1px solid var(--border);}
+.bar-in{max-width:1120px; margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:11px; display:flex; flex-direction:column; gap:11px;}
+.brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.brand h1{font-size:18px; font-weight:800;}
+.brand .corte{font-size:11.5px; color:var(--muted); margin-left:auto; text-align:right; line-height:1.3;}
+.brand .corte b{color:var(--fg); font-weight:600;}
+.sponsors{display:flex; gap:6px; flex-wrap:wrap;}
+.sp-btn{font-family:var(--f-display); font-weight:600; font-size:12.5px; padding:6px 13px; border-radius:999px;
+  border:1px solid var(--border-strong); background:var(--surface-2); color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap;}
+.sp-btn:hover{color:var(--fg); border-color:var(--accent);}
+.sp-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.sp-btn.soon{opacity:.45; cursor:not-allowed;}
+.sp-btn.soon:hover{color:var(--muted); border-color:var(--border-strong);}
+
+.controls{display:flex; gap:9px; align-items:flex-end; flex-wrap:wrap;}
+.field{display:flex; flex-direction:column; gap:3px; min-width:0;}
+.field label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:700; padding-left:2px;}
+select, .search input{font-family:var(--f-body); font-size:13px; color:var(--fg); background:var(--surface-2);
+  border:1px solid var(--border-strong); border-radius:9px; padding:7px 10px; min-width:0; max-width:100%;}
+select{cursor:pointer;}
+#f-year{min-width:78px} #f-month{min-width:118px} #f-sup{min-width:170px} #f-office{min-width:210px}
+.search{flex:1 1 150px; min-width:0;}
+.search input{width:100%;}
+.search input::placeholder{color:var(--faint);}
+.toggle{display:inline-flex; border:1px solid var(--border-strong); border-radius:9px; overflow:hidden; background:var(--surface-2);}
+.toggle button{font-family:var(--f-body); font-weight:600; font-size:12.5px; padding:7px 12px; border:0; background:transparent; color:var(--muted); cursor:pointer;}
+.toggle button.active{background:var(--accent); color:#fff;}
+
+.wrap{max-width:1120px; margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:18px 48px;}
+.scopeline{font-size:12.5px; color:var(--muted); margin:2px 2px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.scopeline .chip{background:var(--accent-soft); color:var(--accent); font-weight:600; border-radius:999px; padding:3px 11px; font-size:12px;}
+.scopeline .chip-cut{background:var(--accent); color:#fff;}
+
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:11px; margin-bottom:6px;}
+.kpi{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:13px 15px; box-shadow:var(--shadow);}
+.kpi .lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600;}
+.kpi .val{font-family:var(--f-display); font-weight:800; font-size:23px; margin-top:4px; letter-spacing:-.02em;}
+.kpi .sub{font-size:11px; color:var(--faint); margin-top:2px;}
+
+details.rules{margin:13px 0 4px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow);}
+details.rules>summary{cursor:pointer; list-style:none; padding:11px 15px; font-family:var(--f-display); font-weight:600; font-size:13px; color:var(--fg); display:flex; align-items:center; gap:8px;}
+details.rules>summary::-webkit-details-marker{display:none}
+details.rules>summary::before{content:"ⓘ"; color:var(--accent); font-size:15px;}
+details.rules>summary::after{content:"▾"; margin-left:auto; color:var(--muted); transition:transform .2s;}
+details.rules[open]>summary::after{transform:rotate(180deg);}
+.rules-body{padding:0 15px 15px; font-size:12.5px; color:var(--muted); line-height:1.65;}
+.rules-body b{color:var(--fg);}
+.rules-body code{background:var(--surface-3); padding:1px 6px; border-radius:5px; font-size:11.5px;}
+.pct-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:5px 16px; margin-top:8px;}
+.pct-grid span{display:flex; justify-content:space-between; border-bottom:1px dotted var(--border); padding:3px 0;}
+.pct-grid span b{color:var(--accent);}
+.note{display:flex; gap:9px; align-items:flex-start; background:var(--warn-bg); border:1px solid var(--warn); border-radius:10px; padding:9px 12px; font-size:12px; color:var(--warn); margin:11px 0;}
+
+.section-head{display:flex; align-items:baseline; gap:10px; margin:20px 2px 11px; flex-wrap:wrap;}
+.section-head h2{font-size:15px; font-weight:700;}
+.section-head .count{font-size:12px; color:var(--muted);}
+
+.office{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:11px; overflow:hidden;}
+.office>summary{cursor:pointer; list-style:none; padding:12px 15px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:13px;}
+.office>summary::-webkit-details-marker{display:none}
+.office>summary:hover{background:var(--surface-2);}
+.rank{width:33px; height:33px; border-radius:9px; display:grid; place-items:center; font-family:var(--f-display); font-weight:800; font-size:13.5px; background:var(--surface-3); color:var(--muted); flex:none;}
+.rank.r1{background:var(--gold); color:#2a2000;} .rank.r2{background:var(--silver); color:#1a1f28;} .rank.r3{background:var(--bronze); color:#2a1405;}
+.office .name{font-family:var(--f-display); font-weight:700; font-size:14px; min-width:0;}
+.office .name small{display:block; font-family:var(--f-body); font-weight:500; font-size:11px; color:var(--faint); letter-spacing:.02em;}
+.office .stats{display:flex; gap:17px; text-align:right;}
+.office .stats .s{display:flex; flex-direction:column;}
+.office .stats .s .n{font-family:var(--f-display); font-weight:700; font-size:14.5px;}
+.office .stats .s .k{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--faint);}
+.office>summary::after{content:"▾"; color:var(--muted); font-size:13px; transition:transform .2s;}
+.office[open]>summary::after{transform:rotate(180deg);}
+
+.solo{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; margin-bottom:11px;}
+.solo .solohead{padding:14px 16px; display:flex; align-items:center; gap:13px; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+.solo .solohead .name{font-family:var(--f-display); font-weight:800; font-size:17px;}
+.solo .solohead .stats{display:flex; gap:20px; margin-left:auto; text-align:right;}
+.solo .solohead .stats .s .n{font-family:var(--f-display); font-weight:700; font-size:16px;}
+.solo .solohead .stats .s .k{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--faint);}
+
+.tscroll{overflow-x:auto;}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:460px;}
+thead th{text-align:center; font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--faint); padding:8px 12px; background:var(--surface-2); border-bottom:1px solid var(--border); white-space:normal; line-height:1.25; vertical-align:bottom;}
+thead th:first-child, tbody td:first-child{text-align:center;}
+thead th.l, tbody td.l{text-align:left;}
+tbody td{padding:9px 12px; border-bottom:1px solid var(--border); text-align:center; white-space:nowrap;}
+tbody tr:last-child td{border-bottom:0;}
+tbody tr:hover{background:var(--surface-2);}
+tbody tr.hit{background:var(--accent-soft);}
+.vn{font-weight:600; color:var(--fg);}
+.badge-an{display:inline-block; margin-left:7px; font-size:10px; font-weight:700; letter-spacing:.02em; color:var(--warn);
+  background:var(--warn-bg); border:1px solid var(--warn-bg); border-radius:999px; padding:1px 7px; vertical-align:middle; cursor:help;}
+.costo-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:5px 16px; margin-top:8px;}
+.costo-grid span{display:flex; justify-content:space-between; border-bottom:1px dotted var(--border); padding:3px 0;}
+.costo-grid span b{color:var(--accent); font-variant-numeric:tabular-nums;}
+.mini-rank{display:inline-grid; place-items:center; width:24px; height:24px; border-radius:7px; font-family:var(--f-display); font-weight:700; font-size:11px; background:var(--surface-3); color:var(--muted);}
+.mini-rank.r1{background:var(--gold); color:#2a2000;} .mini-rank.r2{background:var(--silver); color:#1a1f28;} .mini-rank.r3{background:var(--bronze); color:#2a1405;}
+td .money{color:var(--fg); font-weight:600;} td .com{color:var(--good); font-weight:600;} td .ap{color:var(--accent); font-weight:600;}
+.office-cell{color:var(--muted); font-size:12px;}
+tfoot td{padding:9px 12px; font-weight:700; background:var(--surface-2); border-top:1px solid var(--border-strong); text-align:center; font-size:12px;}
+tfoot td.l{text-align:left; text-transform:uppercase; letter-spacing:.04em; font-size:10px; color:var(--muted);}
+
+.empty{text-align:center; padding:48px 20px; color:var(--faint);}
+.empty .big{font-family:var(--f-display); font-size:16px; color:var(--muted); margin-bottom:4px;}
+footer{max-width:1120px; margin:0 auto; padding:22px 16px 8px; color:var(--faint); font-size:11px; text-align:center;}
+
+.actions{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap;}
+.imp-btn,.dl-btn{font-family:var(--f-body); font-weight:600; font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; white-space:nowrap;}
+.dl-btn{background:transparent; color:var(--accent);}
+.imp-btn.alt{background:transparent; color:var(--accent);}
+.imp-btn:hover,.dl-btn:hover{filter:brightness(1.08);}
+.tc-wrap{font-size:12px; color:var(--muted); display:inline-flex; align-items:center; gap:3px; border:1px solid var(--border-strong); border-radius:8px; padding:3px 8px; background:var(--surface-2);}
+.tc-wrap input{width:60px; border:0; background:transparent; color:var(--fg); font-family:var(--f-body); font-size:13px;}
+.imgbtn{font-family:var(--f-body); font-size:10.5px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border-strong); border-radius:7px; padding:3px 8px; cursor:pointer; margin-left:8px; flex:none;}
+.imgbtn:hover{background:var(--accent); color:#fff;}
+table.grid{min-width:380px;}
+table.grid td.gcell{text-align:center; font-weight:700;}
+table.grid td.gcell.gok{background:#1f9d6b; color:#fff;}
+table.grid td.gcell.gno{background:#d7452f; color:#fff;}
+.glegend{display:flex; gap:18px; padding:10px 14px; font-size:11.5px; color:var(--muted); border-top:1px solid var(--border); flex-wrap:wrap;}
+.glegend i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:middle; margin-right:5px;}
+.glegend i.gok{background:#1f9d6b;} .glegend i.gno{background:#d7452f;}
+#overlay{position:fixed; inset:0; z-index:50; background:rgba(10,15,25,.55); display:flex; align-items:center; justify-content:center; padding:20px;}
+#overlay .ov-box{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:26px 34px; box-shadow:var(--shadow); text-align:center; color:var(--fg); font-family:var(--f-display); font-weight:600;}
+#overlay .spinner{width:34px; height:34px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; margin:0 auto 14px; animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#overlay .ov-msg{font-size:14px;}
+#toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--fg); color:var(--bg); padding:11px 18px; border-radius:10px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:all .25s; z-index:60; max-width:90%; text-align:center;}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0);}
+.sin-head{margin:24px 2px 10px; font-family:var(--f-display); font-weight:700; font-size:13.5px; color:var(--muted); display:flex; align-items:center; gap:8px;}
+.sin-head::before{content:""; height:1px; flex:none; width:16px; background:var(--border-strong);}
+.office.noact{opacity:1;}
+.office.noact .name small{color:var(--fg); font-weight:600; font-size:11.5px;}
+.office.noact .name small b.lastreg{color:var(--warn); font-weight:700;}
+.office.noact>summary{cursor:default; grid-template-columns:auto 1fr auto;}
+.office.noact>summary:hover{background:none;}
+.office.noact>summary::after{display:none;}
+.noact-tag{font-family:var(--f-body); font-weight:600; font-size:11px; color:var(--warn); background:var(--warn-bg); border:1px solid var(--warn); border-radius:999px; padding:3px 11px; white-space:nowrap;}
+@media (max-width:620px){
+  .office>summary{grid-template-columns:auto 1fr; gap:10px;}
+  .actions{width:100%; margin-left:0;}
+  .office .stats{grid-column:1 / -1; justify-content:flex-start; gap:22px; padding-left:44px;}
+  .office>summary::after{display:none;}
+  .brand .corte{margin-left:0; width:100%; text-align:left;}
+  .solo .solohead .stats{margin-left:0; width:100%;}
+}
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <h1 id="title">Ranking de Colocación</h1>
+      <div class="actions">
+        <label class="imp-btn" title="Importar CSV de la hoja Ventas, o el Excel">⬆ Importar datos<input id="f-import" type="file" accept=".csv,.xlsx,.xls" hidden></label>
+        <label class="imp-btn alt" title="Importar o actualizar tu catálogo de oficinas por sponsor">⬆ Oficinas<input id="f-offices" type="file" accept=".csv,.xlsx,.xls" hidden></label>
+        <label class="tc-wrap" title="Tipo de cambio para colonizar dólares">TC ₡<input id="f-tc" type="number" value="510" min="1" step="0.01"></label>
+        <div class="corte"><span id="corte-tc"></span><br><span id="corte-sub"></span></div>
+      </div>
+    </div>
+    <div class="sponsors" id="sponsors"></div>
+    <div class="controls">
+      <div class="field"><label>Año</label><select id="f-year"></select></div>
+      <div class="field" id="month-field"><label>Mes</label><select id="f-month"></select></div>
+      <div class="field"><label>Supervisor</label><select id="f-sup"></select></div>
+      <div class="field"><label>Oficina</label><select id="f-office"></select></div>
+      <div class="field"><label>Vista</label>
+        <div class="toggle" id="view">
+          <button data-v="office" class="active">Oficinas</button>
+          <button data-v="flat">Vendedores</button>
+        </div>
+      </div>
+      <div class="field search"><label>Buscar vendedor</label><input id="search" type="text" placeholder="Nombre…" autocomplete="off"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="scopeline" id="scope"></div>
+  <div class="kpis" id="kpis"></div>
+  <div id="rules"></div>
+  <div id="content"></div>
+</div>
+<footer id="foot">Tablero de rankings de colocación · colones (CRC). Importá el CSV de la hoja “Ventas 2025-2026” para actualizar; los datos se guardan automáticamente en este navegador.</footer>
+
+<div id="overlay" hidden><div class="ov-box"><div class="spinner"></div><div class="ov-msg">Procesando…</div></div></div>
+<div id="toast"></div>
+
+<script type="application/json" id="rankings">{"schema":6,"rate":510,"pct":{"FRE (Protección Total Plus)":0.35,"RDH (Renta Diaria Hospitalaria)":0.35,"Protección Hospitalaria":0.3,"SENIOR":0.25,"Tiquitos (Estudiantil)":0.2,"AP Rentas (Renta Alimenticia)":0.25},"generated":"2026-11-02","directory":{"bncr":["111 SANTA ROSA DE POCOSOL","12 CIUDAD QUESADA","162 CENTRO DE NEGOCIOS CIUDAD QUESADA","163 AGUAS ZARCAS","170 MUELLE DE SAN CARLOS","18 NARANJO","19 PALMARES","20 SAN RAMON","249 FLORENCIA","29 ZARCERO","50 VENECIA","52 ARENAL","57 LA FORTUNA","58 PITAL","66 SANTA RITA DE RIO CUARTO","67 LOS CHILES","68 UPALA","76 GUATUSO"],"bp":["AG AGUAS ZARCAS","AG FLORENCIA","AG LA FORTUNA","AG NARANJO","AG PALMARES","Agencia Mall El Encuentro","AG STA ROSA POCOSOL","AG UPALA","AG ZARCERO","BPT SAN CARLOS","BPT SAN RAMON"],"coopeande":["Agencia de San Carlos","Agencia de San Ramón"],"purdy":["Purdy San Carlos Purdy Motor"],"bcr":["Sede 211 upala","Sede 215 ciudad quesada","Sede 255 san ramón","Sede 295 naranjo","Sede 297 palmares","Sede 334 florencia ciudad quesada","Sede 341 aguas zarcas","Sede 342 santa rosa de pocosol","Sede 345 pital","Sede 346 la fortuna","Sede 347 río cuarto","Sede 660 zarcero"],"coopenae":["SUCURSAL SAN CARLOS","SUCURSAL SAN RAMON"]},"maxDate":null,"maxDateByPeriod":{},"maxDateByYear":{},"bncr":{"years":[],"monthsByYear":{},"supsByPeriod":{},"cells":{},"notes":{},"lastByOfficeYear":{}},"bcr":{"years":[],"supsByYear":{},"cells":{},"lastMonthByYear":{},"monthsByYear":{},"lastByOfficeYear":{}},"coopenae":{"years":[],"monthsByYear":{},"supsByPeriod":{},"cells":{},"weeksByPeriod":{},"unk":{},"lastByOfficeYear":{}},"coopeande":{"years":[],"monthsByYear":{},"supsByPeriod":{},"cells":{},"lastByOfficeYear":{}},"bp":{"years":[],"monthsByYear":{},"supsByPeriod":{},"cells":{},"unk":{},"lastByOfficeYear":{}},"purdy":{"years":[],"monthsByYear":{},"supsByPeriod":{},"cells":{},"lastByOfficeYear":{}}}</script>
+<script>
+/* ============================================================
+   Procesador de rankings (único para datos embebidos y para import).
+   process(rows, rate, directory)
+     rows      = array de arrays (fila 0 = encabezados) de "Ventas 2025-2026"
+     rate      = tipo de cambio para colonizar dólares
+     directory = catálogo de oficinas por sponsor {bncr:[...],bcr:[...],...}
+   Asignación de oficina: cada vendedor se asigna a UNA oficina = la que más
+   veces registra en TODO el historial (y se canoniza con el catálogo si calza).
+   ============================================================ */
+(function(root){
+'use strict';
+var MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var ANU_FALLBACK=50000, TIQ=950;  // umbral de respaldo para primas fuera de tabla
+/* Tarifas BNCR por plan (colones) — clasifican la prima como MENSUAL o ANUAL por su valor exacto.
+   Renta Diaria por Hospitalización (RDH): */
+var RDH_MEN={5800:1,6350:1,6850:1,9800:1,12600:1,15400:1,19200:1,26600:1,33900:1};
+var RDH_ANU={69600:1,76200:1,82200:1,117600:1,151200:1,184800:1,230400:1,319200:1,406800:1};
+/* Protección Hospitalaria: */
+var PROT_MEN={2600:1,3000:1,3400:1,3800:1,4300:1,5600:1,7000:1,8300:1,7200:1,9800:1,12300:1,14900:1};
+var PROT_ANU={31200:1,36000:1,40800:1,45600:1,51600:1,67200:1,84000:1,99600:1,86400:1,117600:1,147600:1,178800:1};
+function esAnualPrima(fam,col,esUnica){
+  var p=Math.round(col);
+  if(fam==='RDH'){ if(RDH_ANU[p])return true; if(RDH_MEN[p])return false; }
+  else if(fam==='PROT'){ if(PROT_ANU[p])return true; if(PROT_MEN[p])return false; }
+  return esUnica || col>=ANU_FALLBACK;   // fuera de tabla: por TIPO PRIMA Única o monto alto
+}
+var r2=function(x){return Math.round(x*100)/100;};
+function numPrefix(s){var m=/^\s*0*(\d+)/.exec(String(s)); return m?m[1]:null;}
+function normName(s){return String(s==null?'':s).toUpperCase().replace(/\s+/g,' ').trim();}
+function sname(s){return (s===null||s===undefined||s==='')?'(sin supervisor)':String(s);}
+function vname(s){return (s===null||s===undefined||String(s).trim()==='')?'(sin vendedor)':String(s);}
+function toNum(x){ if(typeof x==='number')return x; if(x===null||x===undefined||x==='')return null;
+  var n=parseFloat(String(x).replace(/[^0-9.\-]/g,'')); return isNaN(n)?null:n; }
+
+var SPKEY={'BNCR':'bncr','BCR':'bcr','COOPENAE':'coopenae','COOPEANDE':'coopeande','COOPEANDE ':'coopeande','CoopeAnde':'coopeande','BP':'bp','PURDY':'purdy'};
+/* columnas del Excel de oficinas -> clave interna */
+var DIRCOL={'BANCO POPULAR':'bp','BCR':'bcr','BNCR':'bncr','COOPEANDE':'coopeande','COOPENAE':'coopenae','PURDY':'purdy'};
+/* Oficinas que son la misma pero llegan con dos nombres distintos: alias -> canónico.
+   Clave = nombre normalizado (mayúsculas, espacios colapsados). Agregar pares aquí. */
+var ALIASES={ bp:{ 'AG PLAZA SAN CARLOS':'Agencia Mall El Encuentro' } };
+function aliasName(spk,name){ var a=ALIASES[spk]; if(!a)return name; var c=a[normName(name)]; return c||name; }
+
+/* --- BNCR --- */
+var PCT_RULES=[['FRE',0.35],['RDH',0.35],['PROTEC',0.30],['SENIOR',0.25],['TIQUITOS',0.20],['AP',0.25]];
+var PCT_LABELS={'FRE (Protección Total Plus)':0.35,'RDH (Renta Diaria Hospitalaria)':0.35,'Protección Hospitalaria':0.30,'SENIOR':0.25,'Tiquitos (Estudiantil)':0.20,'AP Rentas (Renta Alimenticia)':0.25};
+function pctDe(pf){var p=String(pf).toUpperCase().trim();for(var i=0;i<PCT_RULES.length;i++){if(p.indexOf(PCT_RULES[i][0])===0)return PCT_RULES[i][1];}return null;}
+function esTiquitos(pf){return String(pf).toUpperCase().indexOf('TIQUITOS')===0;}
+function comBNCR(x){ if(x<=6000)return 0; if(x<=50000)return x*0.5; if(x<=100000)return x*1.0; return x*1.5; }
+/* --- BP --- */
+var BP_ESCALA=[[0,6000,0],[6001,50000,0.005],[50001,1e12,0.01]];
+var BP_FIJO=[[3,3,1500],[4,7,1800],[8,15,2000],[16,1e9,2500]];
+var BP_MUVIT=0.05;
+var BP_MAP={'Bolso Seguro Total BP':'escala','Respalda tu Saldo BP':'escala','Siempre Contigo BP':'escala','PROTECCIÓN 360 BP':'fijo','Muvit BP':'muvit','Tiquitos BP':'tiq'};
+function bpEsc(b){for(var i=0;i<BP_ESCALA.length;i++){if(b>=BP_ESCALA[i][0]&&b<=BP_ESCALA[i][1])return BP_ESCALA[i][2];}return 0;}
+function bpFijo(n){for(var i=0;i<BP_FIJO.length;i++){if(n>=BP_FIJO[i][0]&&n<=BP_FIJO[i][1])return BP_FIJO[i][2];}return 0;}
+/* --- COOPENAE --- */
+var COOP_PROD={'RDH NAE':[3000,true],'AP Rentas NAE':[3000,true],'FRE NAE':[4000,true],'Asistencia NAE':[500,false],'ESTAR BIEN NAE':[500,false]};
+/* --- COOPEANDE --- */
+function andeRate(v){ if(v>=10)return 5500; if(v>=6)return 4500; if(v>=2)return 2500; return 0; }
+/* --- PURDY --- */
+function purdyCalc(n){ if(n<4)return 0; if(n<=7)return n*800; if(n<=10)return n*1000+5000; return n*1500+10000; }
+function purdyRate(n){ if(n<4)return 0; if(n<=7)return 800; if(n<=10)return 1000; return 1500; }
+function purdyBono(n){ if(n>=11)return 10000; if(n>=8)return 5000; return 0; }
+
+function esUSD(p,pd){ return p!==null&&pd!==null&&pd>0&&(p/pd)<10; }
+function colonizar(p,pd,rate){ if(p===null)return 0; if(esUSD(p,pd))return pd*rate; return p; }
+function pad2(n){return (n<10?'0':'')+n;}
+/* Parsea F EMISIÓN (M/D/AAAA, AAAA-MM-DD o serial Excel) -> {key:'AAAAMMDD', iso:'AAAA-MM-DD'} */
+function parseDate(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number'){ var d=new Date(Math.round((v-25569)*86400000)); if(isNaN(d.getTime()))return null;
+    var y0=d.getUTCFullYear(),m0=d.getUTCMonth()+1,d0=d.getUTCDate(); return {key:''+y0+pad2(m0)+pad2(d0),iso:y0+'-'+pad2(m0)+'-'+pad2(d0)}; }
+  var s=String(v).trim();
+  var a=/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s);
+  if(a){var mo=+a[1],da=+a[2],yr=+a[3]; if(yr<100)yr+=2000; if(mo>12&&da<=12){var t=mo;mo=da;da=t;} return {key:''+yr+pad2(mo)+pad2(da),iso:yr+'-'+pad2(mo)+'-'+pad2(da)};}
+  var b=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if(b){var y2=+b[1],m2=+b[2],d2=+b[3]; return {key:''+y2+pad2(m2)+pad2(d2),iso:y2+'-'+pad2(m2)+'-'+pad2(d2)};}
+  return null;
+}
+/* Parsea HORA ('2:28:21 AM', '14:05', etc.) -> {hh,mi,ss} en 24h, o null si vacía/ilegible */
+function parseTime(v){
+  if(v===null||v===undefined||String(v).trim()==='')return null;
+  var s=String(v).trim(), hh,mi,ss=0;
+  var m=/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap])\.?\s?m\.?/i.exec(s);
+  if(m){ hh=+m[1]; mi=+m[2]; ss=m[3]?+m[3]:0; var pm=/p/i.test(m[4]);
+    if(pm&&hh<12)hh+=12; if(!pm&&hh===12)hh=0; }
+  else{ var m2=/^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(s); if(!m2)return null; hh=+m2[1]; mi=+m2[2]; ss=m2[3]?+m2[3]:0; }
+  if(hh>23||mi>59)return null;
+  return {hh:hh,mi:mi,ss:ss};
+}
+/* envuelve fecha+hora en un objeto de corte comparable y mostrable */
+function cutObj(dt,tm){ return {iso:dt.iso, tkey:dt.key+(tm?(pad2(tm.hh)+pad2(tm.mi)+pad2(tm.ss)):'000000'),
+  hh:tm?tm.hh:null, mi:tm?tm.mi:null, hasTime:!!tm}; }
+
+function buildMatchers(directory){
+  var M={};
+  for(var sp in (directory||{})){
+    var byNum={},byName={},list=directory[sp]||[];
+    for(var i=0;i<list.length;i++){var nm=String(list[i]).trim(); if(!nm)continue;
+      byName[normName(nm)]=nm; var n=numPrefix(nm); if(n)byNum[n]=nm;}
+    M[sp]={byNum:byNum,byName:byName};
+  }
+  return M;
+}
+
+function process(rows, rate, directory){
+  rate = rate||510;
+  var M=buildMatchers(directory||{});
+  var hdr=rows[0], I={}; for(var c=0;c<hdr.length;c++) I[String(hdr[c]).trim()]=c;
+  var SP=I['SPONSOR'],PR=I['Prima'],PRD=I['PRIMA $'],SUC=I['SUCURSAL HOMOLOGADA'],VEN=I['VENDEDOR'],
+      MES=I['MES'],ANIO=I['AÑO'],PFIN=I['PRODUCTO FINAL'],SUP=I['SUPERVISOR'],TP=I['TIPO PRIMA'],SEM=I['SEMANA'],FE=I['F EMISIÓN'],HO=I['HORA'];
+
+  /* officeId: 'D'+nombreCatálogo si calza; si no, 'K'+clave (número o nombre). */
+  function officeId(spk,suc){
+    var m=M[spk]; var n=numPrefix(suc);
+    if(m){ if(n&&m.byNum[n])return 'D'+m.byNum[n]; var nn=normName(suc); if(m.byName[nn])return 'D'+m.byName[nn]; }
+    return 'K'+(n||String(suc).trim());
+  }
+  /* ---- Pass 1: fecha de corte (venta más reciente) + nombres de oficinas fuera del catálogo ---- */
+  var knames={}, maxP={}, maxY={}, maxG=null;
+  for(var ri=1;ri<rows.length;ri++){var r=rows[ri]; if(!r||r.length===0)continue;
+    var dt=parseDate(r[FE]), yv=toNum(r[ANIO]);
+    if(dt&&yv!==null){var pk0=(yv|0)+'|'+String(r[MES]).toLowerCase();
+      var co=cutObj(dt, HO!=null?parseTime(r[HO]):null);
+      if(!maxP[pk0]||co.tkey>maxP[pk0].tkey)maxP[pk0]=co;
+      if(!maxY[yv|0]||co.tkey>maxY[yv|0].tkey)maxY[yv|0]=co;
+      if(!maxG||co.tkey>maxG.tkey)maxG=co;}
+    var spk=SPKEY[r[SP]]; if(!spk)continue;
+    var suc=String(r[SUC]), oid=officeId(spk,suc);
+    if(oid.charAt(0)==='K'){ (knames[spk]=knames[spk]||{}); (knames[spk][oid]=knames[spk][oid]||{}); knames[spk][oid][suc]=(knames[spk][oid][suc]||0)+1; }
+  }
+  /* BNCR: dos sistemas generan el mismo número con formatos distintos
+     ('12 CIUDAD QUESADA' vs '12-SUCURSAL CIUDAD QUESADA'). Se agrupan por el
+     número líder (ver officeId) y el nombre se normaliza a 'NN NOMBRE'. */
+  function canonBNCR(s){
+    var m=/^\s*0*(\d+)\s*[-\s]\s*(.*)$/.exec(String(s)); if(!m)return s;
+    var rest=m[2].replace(/^(SUCURSAL|AGENCIA|SUC\.?|AG\.?|OFICINA)\s+/i,'').trim();
+    return m[1]+(rest?' '+rest:'');
+  }
+  function dispName(spk,oid){
+    var out;
+    if(oid.charAt(0)==='D')out=oid.slice(1);
+    else{
+      var names=(knames[spk]||{})[oid]||{}, best='', bc=-1;
+      for(var nm in names){if(names[nm]>bc||(names[nm]===bc&&nm.length>best.length)){bc=names[nm];best=nm;}}
+      out=best||oid.slice(1);
+      if(spk==='bncr')out=canonBNCR(out);
+    }
+    return aliasName(spk,out);   // fusiona oficinas con dos nombres (ej. Plaza San Carlos = Mall El Encuentro)
+  }
+
+  /* ---- Pass 2: agregación por oficina-hogar ---- */
+  var bncr={},bcr={},coop={},ande={},bp={},purdy={};
+  var bncrNotes={}, coopUnk={}, bpUnk={}, bcrLastMonth={}, bcrMonths={}, lastOff={};
+  function note(pk){ if(!bncrNotes[pk])bncrNotes[pk]={usd_pol:0,usd_monto:0,sinpct:{},sinpct_total:0,rdh_anual:0}; return bncrNotes[pk]; }
+  function addUnk(map,pk,pf){ if(!map[pk])map[pk]={}; map[pk][pf]=(map[pk][pf]||0)+1; }
+  function cellOf(store,key){ if(!store[key])store[key]={}; return store[key]; }
+
+  for(var ri3=1;ri3<rows.length;ri3++){
+    var r=rows[ri3]; if(!r||r.length===0)continue;
+    var spk=SPKEY[r[SP]]; if(!spk)continue;
+    var y=toNum(r[ANIO]); if(y===null)continue; y=y|0;
+    var sup=sname(r[SUP]), m=String(r[MES]).toLowerCase(), pf=String(r[PFIN]), sem=r[SEM];
+    var ven=vname(r[VEN]); var office=dispName(spk, officeId(spk, String(r[SUC])));
+    // Último registro por (sponsor, AÑO, oficina) — el mes más reciente con venta en ese año.
+    var mi2=MESES.indexOf(m);
+    var yo=lastOff[spk]||(lastOff[spk]={}); var yoy=yo[y]||(yo[y]={}); var curo=yoy[office];
+    if(!curo||mi2>=curo.mi)yoy[office]={mi:mi2,mes:m,ven:ven,prod:pf};
+    var p=toNum(r[PR]), pd=toNum(r[PRD]);
+    if(spk==='bcr'){
+      var mi=MESES.indexOf(m); if(mi>=0&&(bcrLastMonth[y]===undefined||mi>bcrLastMonth[y]))bcrLastMonth[y]=mi;
+      (bcrMonths[y]=bcrMonths[y]||{})[m]=1;
+      var cellb=cellOf(bcr,y+'|'+sup); if(!cellb[office])cellb[office]={};
+      var vv=cellb[office][ven]||(cellb[office][ven]={pol:0,rec:0,uni:0,mes:0,_m:{}});
+      vv.pol++; var tp=String(r[TP]).trim().toLowerCase();
+      if(tp.indexOf('recur')===0)vv.rec++; else if(tp.indexOf('ún')===0||tp.indexOf('un')===0)vv.uni++;
+      vv._m[m]=(vv._m[m]||0)+1;
+    } else if(spk==='bncr'){
+      var pk=y+'|'+m, nt=note(pk); var col=colonizar(p,pd,rate), pct=pctDe(pf);
+      if(pct===null){ nt.sinpct[pf]=(nt.sinpct[pf]||0)+1; nt.sinpct_total++; pct=0; }
+      var puf=String(pf).toUpperCase();
+      var tpb=String(r[TP]).trim().toLowerCase();
+      var esUnica=tpb.indexOf('ún')===0||tpb.indexOf('un')===0;   // Única = prima anual
+      // Familia anualizable + clasificación por tarifa exacta (mensual/anual)
+      var fam=puf.indexOf('RDH')===0?'RDH':(puf.indexOf('PROTEC')===0?'PROT':null);
+      var anual=fam?esAnualPrima(fam,col,esUnica):false;
+      var prm=anual?col/12:col; if(anual)nt.rdh_anual++; var tiq=esTiquitos(pf);
+      var ofb=cellOf(bncr,y+'|'+m+'|'+sup); var v=ofb[office]||(ofb[office]={pol:0,pr:0,prmBase:0,ap:0,an:0,tiq:0,_v:{}});
+      var vb=v._v[ven]||(v._v[ven]={pol:0,pr:0,prmBase:0,ap:0,an:0,tiq:0});
+      vb.pol++; vb.pr+=col; vb.ap+=col*pct; if(anual)vb.an++;
+      if(tiq)vb.tiq++; else vb.prmBase+=prm;
+      if(esUSD(p,pd)){ nt.usd_pol++; nt.usd_monto+=pd; }
+    } else if(spk==='coopenae'){
+      var ofc=cellOf(coop,y+'|'+m+'|'+sup); var vc=ofc[office]||(ofc[office]={_v:{}});
+      var vv2=vc._v[ven]||(vc._v[ven]={pol:0,w:{}}); vv2.pol++;
+      var info=COOP_PROD[pf], rateP, mn; if(info){rateP=info[0];mn=info[1];}else{rateP=0;mn=false;addUnk(coopUnk,y+'|'+m,pf);}
+      var wk=vv2.w[sem]||(vv2.w[sem]={c:0,main:0,amt:0}); wk.c++; wk.amt+=rateP; if(mn)wk.main++;
+    } else if(spk==='coopeande'){
+      var ofd=cellOf(ande,y+'|'+m+'|'+sup); var vd=ofd[office]||(ofd[office]={_v:{}});
+      vd._v[ven]=(vd._v[ven]||0)+1;
+    } else if(spk==='bp'){
+      var ofp=cellOf(bp,y+'|'+m+'|'+sup); var vp=ofp[office]||(ofp[office]={_v:{}});
+      var vv4=vp._v[ven]||(vp._v[ven]={pol:0,base:0,fijoN:0,muv:0,tiq:0,unk:0}); vv4.pol++;
+      var cat=BP_MAP[pf];
+      if(cat==='escala')vv4.base+=colonizar(p,pd,rate);
+      else if(cat==='fijo')vv4.fijoN++;
+      else if(cat==='muvit'){ var usd=(pd!==null?pd:(p||0)); vv4.muv+=usd*BP_MUVIT*rate; }
+      else if(cat==='tiq')vv4.tiq++;
+      else { vv4.unk++; addUnk(bpUnk,y+'|'+m,pf); }
+    } else if(spk==='purdy'){
+      var ofpu=cellOf(purdy,y+'|'+m+'|'+sup); var vpu=ofpu[office]||(ofpu[office]={_v:{}});
+      vpu._v[ven]=(vpu._v[ven]||0)+1;
+    }
+  }
+
+  function dims(cells,ym){
+    var ys={},mby={},sbp={},sby={};
+    for(var key in cells){var pa=key.split('|');
+      if(ym){var y=pa[0],mm=pa[1],s=pa[2];ys[y]=1;(mby[y]=mby[y]||{})[mm]=1;(sbp[y+'|'+mm]=sbp[y+'|'+mm]||{})[s]=1;}
+      else{var y2=pa[0],s2=pa[1];ys[y2]=1;(sby[y2]=sby[y2]||{})[s2]=1;}}
+    var years=Object.keys(ys).sort();
+    function sm(o){return MESES.filter(function(x){return o[x];});}
+    if(ym){var mb={},sp2={};for(var yy in mby)mb[yy]=sm(mby[yy]);for(var k in sbp)sp2[k]=Object.keys(sbp[k]).sort();
+      return {years:years,monthsByYear:mb,supsByPeriod:sp2};}
+    var sb={};for(var yyy in sby)sb[yyy]=Object.keys(sby[yyy]).sort();
+    return {years:years,supsByYear:sb};
+  }
+  function sortD(a,f){a.sort(function(x,y){return (y[f]||0)-(x[f]||0);});}
+  function sumF(a,f){var t=0;for(var i=0;i<a.length;i++)t+=(a[i][f]||0);return t;}
+
+  // BNCR
+  var bncrCells={};
+  for(var key in bncr){var cell=bncr[key],ol=[];
+    for(var office in cell){var vs=[],V=cell[office]._v;
+      for(var ven in V){var d=V[ven],co=comBNCR(d.prmBase)+d.tiq*TIQ;
+        vs.push({v:ven,pol:d.pol,pr:r2(d.pr),prm:r2(d.prmBase),co:r2(co),ap:r2(d.ap),an:d.an,tiq:d.tiq});}
+      sortD(vs,'pr');
+      ol.push({o:office,pol:sumF(vs,'pol'),pr:r2(sumF(vs,'pr')),prm:r2(sumF(vs,'prm')),co:r2(sumF(vs,'co')),ap:r2(sumF(vs,'ap')),an:sumF(vs,'an'),tiq:sumF(vs,'tiq'),vs:vs});}
+    sortD(ol,'pr'); bncrCells[key]=ol;}
+  // BCR
+  var bcrCells={};
+  for(var key in bcr){var y=key.split('|')[0],lm=MESES[bcrLastMonth[y]],cell=bcr[key],ol=[];
+    for(var office in cell){var vs=[];
+      for(var ven in cell[office]){var d=cell[office][ven];vs.push({v:ven,pol:d.pol,rec:d.rec,uni:d.uni,mes:(d._m[lm]||0),m:d._m});}
+      sortD(vs,'pol');
+      var omonths={}; for(var vi=0;vi<vs.length;vi++){var vm=vs[vi].m;for(var mm in vm)omonths[mm]=(omonths[mm]||0)+vm[mm];}
+      ol.push({o:office,total:sumF(vs,'pol'),rec:sumF(vs,'rec'),uni:sumF(vs,'uni'),mes:sumF(vs,'mes'),m:omonths,vs:vs});}
+    sortD(ol,'total'); bcrCells[key]=ol;}
+  // COOPENAE
+  var coopCells={},weeksByPeriod={};
+  for(var key in coop){var pa=key.split('|'),pk=pa[0]+'|'+pa[1],cell=coop[key],ol=[];
+    for(var office in cell){var vs=[],owk={},V=cell[office]._v;
+      for(var ven in V){var d=V[ven],com=0,semok=0,semtot=0,wout={};
+        for(var sem in d.w){var w=d.w[sem],c=w.c;semtot++;wout[sem]=c;owk[sem]=(owk[sem]||0)+c;if(c>=2){com+=w.amt;semok++;}}
+        vs.push({v:ven,pol:d.pol,com:r2(com),semok:semok,semtot:semtot,w:wout});
+        (weeksByPeriod[pk]=weeksByPeriod[pk]||{}); for(var s in wout)weeksByPeriod[pk][s]=1;}
+      sortD(vs,'com');
+      ol.push({o:office,pol:sumF(vs,'pol'),com:r2(sumF(vs,'com')),w:owk,vs:vs});}
+    sortD(ol,'com'); coopCells[key]=ol;}
+  var wbp={};for(var pk in weeksByPeriod)wbp[pk]=Object.keys(weeksByPeriod[pk]).map(Number).sort(function(a,b){return a-b;});
+  // COOPEANDE
+  var andeCells={};
+  for(var key in ande){var cell=ande[key],ol=[];
+    for(var office in cell){var vs=[],V=cell[office]._v;
+      for(var ven in V){var pol=V[ven],rt=andeRate(pol);vs.push({v:ven,pol:pol,rate:rt,com:pol*rt});}
+      sortD(vs,'com'); ol.push({o:office,pol:sumF(vs,'pol'),com:sumF(vs,'com'),vs:vs});}
+    sortD(ol,'com'); andeCells[key]=ol;}
+  // BP
+  var bpCells={};
+  for(var key in bp){var cell=bp[key],ol=[];
+    for(var office in cell){var vs=[],V=cell[office]._v;
+      for(var ven in V){var d=V[ven],ce=d.base*bpEsc(d.base),cf=d.fijoN*bpFijo(d.fijoN),cm=d.muv,ct=d.tiq*TIQ;
+        vs.push({v:ven,pol:d.pol,base:r2(d.base),ce:r2(ce),cf:r2(cf),cm:r2(cm),ct:r2(ct),co:r2(ce+cf+cm+ct),unk:d.unk});}
+      sortD(vs,'co'); ol.push({o:office,pol:sumF(vs,'pol'),base:r2(sumF(vs,'base')),co:r2(sumF(vs,'co')),unk:sumF(vs,'unk'),vs:vs});}
+    sortD(ol,'co'); bpCells[key]=ol;}
+  // PURDY
+  var purdyCells={};
+  for(var key in purdy){var cell=purdy[key],ol=[];
+    for(var office in cell){var vs=[],V=cell[office]._v;
+      for(var ven in V){var pol=V[ven];vs.push({v:ven,pol:pol,rate:purdyRate(pol),bono:purdyBono(pol),com:purdyCalc(pol)});}
+      sortD(vs,'com'); ol.push({o:office,pol:sumF(vs,'pol'),com:sumF(vs,'com'),vs:vs});}
+    sortD(ol,'com'); purdyCells[key]=ol;}
+
+  function lmMap(o){var r={};for(var y in o)r[y]=MESES[o[y]];return r;}
+  function bcrMonthsMap(){var r={};for(var y in bcrMonths)r[y]=MESES.filter(function(x){return bcrMonths[y][x];});return r;}
+  function asg(a,b){for(var k in b)a[k]=b[k];return a;}
+  function cclean(c){return {iso:c.iso,hh:c.hh,mi:c.mi,hasTime:c.hasTime};}
+  var mdP={}; for(var kk in maxP)mdP[kk]=cclean(maxP[kk]);
+  var mdY={}; for(var yy in maxY)mdY[yy]=cclean(maxY[yy]);
+  return {
+    schema:6,
+    rate:rate, pct:PCT_LABELS, generated:new Date().toISOString().slice(0,10), directory:directory||{},
+    maxDate:maxG?cclean(maxG):null, maxDateByPeriod:mdP, maxDateByYear:mdY,
+    bncr:asg(dims(bncrCells,true),{cells:bncrCells,notes:bncrNotes,lastByOfficeYear:lastOff.bncr||{}}),
+    bcr:asg(dims(bcrCells,false),{cells:bcrCells,lastMonthByYear:lmMap(bcrLastMonth),monthsByYear:bcrMonthsMap(),lastByOfficeYear:lastOff.bcr||{}}),
+    coopenae:asg(dims(coopCells,true),{cells:coopCells,weeksByPeriod:wbp,unk:coopUnk,lastByOfficeYear:lastOff.coopenae||{}}),
+    coopeande:asg(dims(andeCells,true),{cells:andeCells,lastByOfficeYear:lastOff.coopeande||{}}),
+    bp:asg(dims(bpCells,true),{cells:bpCells,unk:bpUnk,lastByOfficeYear:lastOff.bp||{}}),
+    purdy:asg(dims(purdyCells,true),{cells:purdyCells,lastByOfficeYear:lastOff.purdy||{}}),
+  };
+}
+
+/* Construye el directorio desde el Excel/CSV de oficinas (filas = [oficina, ...columnas sponsor]) */
+function buildDirectory(rows){
+  var dir={}; if(!rows||!rows.length)return dir;
+  var hdr=rows[0], cols=[];
+  for(var c=1;c<hdr.length;c++){var key=DIRCOL[String(hdr[c]).toUpperCase().trim()]; cols.push(key||null);}
+  for(var ri=1;ri<rows.length;ri++){var r=rows[ri]; if(!r)continue; var name=r[0]; if(name==null||String(name).trim()==='')continue;
+    for(var ci=1;ci<r.length;ci++){ if(r[ci]!=null&&String(r[ci]).trim()!==''){ var k=cols[ci-1]; if(k){ (dir[k]=dir[k]||[]).push(String(name).trim()); } } }}
+  // aplicar alias y de-duplicar (dos nombres de catálogo que son la misma oficina -> uno)
+  for(var sp in dir){ var seen={}, arr=[]; dir[sp].forEach(function(nm){ var c=aliasName(sp,nm); var kk=normName(c); if(!seen[kk]){seen[kk]=1;arr.push(c);} }); dir[sp]=arr; }
+  return dir;
+}
+
+/* Normaliza un directorio YA construido: aplica alias y de-duplica (para catálogos
+   guardados antes de existir el alias). */
+function aliasDirectory(dir){ var out={}; if(!dir)return out;
+  for(var sp in dir){ var seen={},arr=[]; (dir[sp]||[]).forEach(function(nm){ var c=aliasName(sp,nm); var k=normName(c); if(!seen[k]){seen[k]=1;arr.push(c);} }); out[sp]=arr; }
+  return out; }
+root.RankProcessor={process:process, buildDirectory:buildDirectory, aliasDirectory:aliasDirectory, MESES:MESES, DIRCOL:DIRCOL};
+})(typeof window!=='undefined'?window:(typeof module!=='undefined'?module.exports:this));
+
+</script>
+<script>
+/* ======================= Dashboard de Rankings ======================= */
+var EMBED = JSON.parse(document.getElementById('rankings').textContent);
+var DATA = EMBED;
+var body = document.body;
+var ALL = '__ALL__';
+var LSKEY = 'ranking_colocacion_v1';
+var LSDIR = 'ranking_oficinas_v1';
+var LSPREF = 'ranking_prefs_v1';
+var SCHEMA = 6;          // versión de los datos procesados; invalida autoguardados viejos
+var prefs = {};          // filtros recordados por sponsor + último sponsor usado
+var curDir = {};        // catálogo de oficinas por sponsor
+var salesRows = null;   // filas de ventas en memoria (para reprocesar si cambian oficinas)
+var fmt = function(n){return '₡'+Math.round(n||0).toLocaleString('es-CR');};
+var fmtN = function(n){return (n||0).toLocaleString('es-CR');};
+var MES = {enero:'Enero',febrero:'Febrero',marzo:'Marzo',abril:'Abril',mayo:'Mayo',junio:'Junio',julio:'Julio',agosto:'Agosto',septiembre:'Septiembre',octubre:'Octubre',noviembre:'Noviembre',diciembre:'Diciembre'};
+var cap = function(m){return MES[m]||m;};
+var MESCORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var MESLARGO=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function niceDate(iso){ if(!iso)return ''; var p=String(iso).split('-'); if(p.length<3)return iso;
+  var y=+p[0],m=+p[1],d=+p[2]; return d+' de '+(MESLARGO[m-1]||m)+' de '+y; }
+function shortDate(iso){ if(!iso)return ''; var p=String(iso).split('-'); if(p.length<3)return iso;
+  return (+p[2])+' '+(MESCORTO[(+p[1])-1]||p[1])+' '+p[0]; }
+/* hora en formato 12h con a. m./p. m. */
+function fmtHora(c){ if(!c||!c.hasTime||c.hh==null)return ''; var h=c.hh,m=c.mi,ap=h<12?'a. m.':'p. m.';
+  var h12=h%12; if(h12===0)h12=12; return h12+':'+(m<10?'0':'')+m+' '+ap; }
+/* corte = objeto {iso,hh,mi,hasTime}; tolera string viejo por compatibilidad */
+function cutObjOf(){ var c=(DATA.maxDateByPeriod||{})[state.year+'|'+state.month]||(DATA.maxDateByYear||{})[state.year];
+  if(c==null)return null; if(typeof c==='string')return {iso:c,hasTime:false}; return c; }
+function cutDate(){ var c=cutObjOf(); return c?c.iso:null; }
+function cutLong(){ var c=cutObjOf(); if(!c)return ''; var s=niceDate(c.iso); var h=fmtHora(c); return h?(s+' a las '+h):s; }
+function cutShort(){ var c=cutObjOf(); if(!c)return ''; var s=shortDate(c.iso); var h=fmtHora(c); return h?(s+' · '+h):s; }
+var esc = function(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var norm = function(s){return (s||'').toString().toLowerCase();};
+var round2 = function(n){return Math.round(n*100)/100;};
+var rankCls = function(i){return i===0?'r1':i===1?'r2':i===2?'r3':'';};
+/* helpers de comisión (para recálculo al unir supervisores) */
+var comBNCR = function(x){return x<=6000?0:x<=50000?x*0.5:x<=100000?x*1.0:x*1.5;};
+var TIQ=950;
+var andeRate = function(v){return v>=10?5500:v>=6?4500:v>=2?2500:0;};
+var purdyCalc = function(n){return n<4?0:n<=7?n*800:n<=10?n*1000+5000:n*1500+10000;};
+var purdyRate = function(n){return n<4?0:n<=7?800:n<=10?1000:1500;};
+var purdyBono = function(n){return n>=11?10000:n>=8?5000:0;};
+
+var C = function(h,get,foot){return {h:h,get:get,foot:foot};};
+var money=function(v,k){return '<span class="money">'+fmt(v[k])+'</span>';};
+var com=function(v,k){return '<span class="com">'+fmt(v[k])+'</span>';};
+var apc=function(v,k){return '<span class="ap">'+fmt(v[k])+'</span>';};
+
+var SCHEMAS = {
+  bncr:{label:'BNCR',title:'BNCR · Ranking mensual',period:'month',
+    cols:[C('Pólizas',function(v){return fmtN(v.pol);},function(o){return fmtN(o.pol);}),
+          C('Prima Acumulada',function(v){return money(v,'pr');},function(o){return fmt(o.pr);}),
+          C('Comisión Estimada',function(v){return com(v,'co');},function(o){return '';}),
+          C('Aporte Meta Anual',function(v){return apc(v,'ap');},function(o){return fmt(o.ap);})],
+    nameExtra:function(v){var b='';if(v.an)b+='<span class="badge-an" title="Incluye '+v.an+' anualizada(s) (RDH / Protección Hospitalaria): comisión sobre prima mensual (÷12)">'+v.an+' anual</span>';if(v.tiq)b+='<span class="badge-an" title="'+v.tiq+' Tiquitos: ₡950 por activación">'+v.tiq+' tiq</span>';return b;},
+    ostats:[['Pól',function(o){return fmtN(o.pol);}],['Prima',function(o){return fmt(o.pr);}],['Aporte',function(o){return fmt(o.ap);}]],
+    osort:'pr',vsort:'pr',vsum:['pol','pr','prm','ap','an','tiq'],
+    vfix:function(v){v.co=round2(comBNCR(v.prm)+v.tiq*TIQ);},ofield:['pol','pr','prm','co','ap','an','tiq'],
+    kpis:function(o){var T=sumF(o,['pol','pr','co','ap']);return K('Pólizas',fmtN(T.pol),o.length+' oficinas · '+nv(o)+' vendedores')+K('Prima acumulada',fmt(T.pr),'₡ + $ colonizado')+K('Aporte Meta Anual',fmt(T.ap),'% por producto');},
+    rules:rulesBNCR},
+  bcr:{label:'BCR',title:'BCR · Ranking anual',period:'year',
+    cols:[C('Pólizas (mes)',function(v){return '<b>'+fmtN(mcnt(v))+'</b>';},function(o){return fmtN(mcnt(o));}),
+          C('Pólizas (año)',function(v){return '<span class="money">'+fmtN(v.pol)+'</span>';},function(o){return fmtN(o.total);}),
+          C('Recurrente',function(v){return fmtN(v.rec);},function(o){return fmtN(o.rec);}),
+          C('Única',function(v){return fmtN(v.uni);},function(o){return fmtN(o.uni);})],
+    ostats:[['Pól año',function(o){return fmtN(o.total);}],['Pól mes',function(o){return fmtN(mcnt(o));}],['Recur.',function(o){return fmtN(o.rec);}],['Única',function(o){return fmtN(o.uni);}]],
+    osort:'total',vsort:'pol',vsum:['pol','rec','uni'],wfield:'m',ofield:['rec','uni'],ototalFromV:true,
+    kpis:function(o){var T=sumF(o,['total','rec','uni']);var mesT=0;o.forEach(function(of){mesT+=mcnt(of);});
+      return K('Pólizas (año)',fmtN(T.total),o.length+' oficinas · '+nv(o)+' vendedores')+K('Pólizas ('+cap(state.month)+')',fmtN(mesT),'ventas del mes')+K('Recurrente',fmtN(T.rec),T.total?Math.round(T.rec/T.total*100)+'%':'')+K('Única',fmtN(T.uni),T.total?Math.round(T.uni/T.total*100)+'%':'');},
+    rules:function(){return rulesBox('BCR','<b>Ranking anual</b> por pólizas colocadas, por oficina y vendedor. <b>Pólizas (mes)</b> = ventas de '+cap(state.month)+' '+state.year+' (según el mes elegido arriba). <b>Recurrente</b> y <b>Única</b> (columna <code>TIPO PRIMA</code>) son del acumulado anual.');}},
+  coopenae:{label:'COOPENAE',title:'COOPENAE · Ranking mensual',period:'month',grid:true,
+    osort:'com',vsort:'com',vsum:['pol','com','semok','semtot'],wfield:'w',ofield:['pol','com'],
+    ostats:[['Pól',function(o){return fmtN(o.pol);}]],
+    kpis:function(o){var T=sumF(o,['pol','com']);return K('Pólizas',fmtN(T.pol),o.length+' oficinas · '+nv(o)+' vendedores')+K('Oficinas',fmtN(o.length),'')+K('Vendedores',fmtN(nv(o)),'');},
+    rules:rulesCOOP},
+  coopeande:{label:'Coope Ande',title:'Coope Ande · Ranking mensual',period:'month',
+    cols:[C('Ventas',function(v){return fmtN(v.pol);},function(o){return fmtN(o.pol);}),
+          C('Tarifa c/u',function(v){return v.rate?fmt(v.rate):'—';},function(o){return '';}),
+          C('Comisión Estimada',function(v){return com(v,'com');},function(o){return '';})],
+    ostats:[['Ventas',function(o){return fmtN(o.pol);}]],
+    osort:'com',vsort:'com',vsum:['pol'],vfix:function(v){v.rate=andeRate(v.pol);v.com=v.pol*v.rate;},ofield:['pol','com'],
+    kpis:function(o){var T=sumF(o,['pol','com']);return K('Ventas',fmtN(T.pol),o.length+' oficinas · '+nv(o)+' vendedores')+K('Oficinas',fmtN(o.length),'')+K('Vendedores',fmtN(nv(o)),'');},
+    rules:function(){return rulesBox('Coope Ande','Pago por <b>cantidad de seguros del mes</b> (tarifa por póliza): <code>2–5 → ₡2.500</code> · <code>6–9 → ₡4.500</code> · <code>10+ → ₡5.500</code>, aplicada a todas las ventas. Menos de 2 no paga.');}},
+  bp:{label:'Banco Popular',title:'Banco Popular · Ranking mensual',period:'month',
+    cols:[C('Pólizas',function(v){return fmtN(v.pol);},function(o){return fmtN(o.pol);}),
+          C('Prima Escala',function(v){return money(v,'base');},function(o){return fmt(o.base);}),
+          C('Comisión Estimada',function(v){return bpCom(v);},function(o){return '';})],
+    nameExtra:function(v){return v.unk?'<span class="badge-an" title="'+v.unk+' póliza(s) de productos sin regla de comisión">'+v.unk+' s/regla</span>':'';},
+    ostats:[['Pól',function(o){return fmtN(o.pol);}],['Prima',function(o){return fmt(o.base);}]],
+    osort:'co',vsort:'co',vsum:['pol','base','ce','cf','cm','ct','co','unk'],ofield:['pol','base','co','unk'],
+    kpis:function(o){var T=sumF(o,['pol','base','co','unk']);return K('Pólizas',fmtN(T.pol),o.length+' oficinas · '+nv(o)+' vendedores')+K('Prima (escala)',fmt(T.base),'Bolso·Respalda·Siempre')+K('Sin regla',fmtN(T.unk),'pólizas sin comisión');},
+    rules:rulesBP},
+  purdy:{label:'Purdy',title:'Purdy · Ranking mensual',period:'month',
+    cols:[C('Ventas',function(v){return fmtN(v.pol);},function(o){return fmtN(o.pol);}),
+          C('Tarifa c/u',function(v){return v.rate?fmt(v.rate):'—';},function(o){return '';}),
+          C('Bono',function(v){return v.bono?fmt(v.bono):'—';},function(o){return '';}),
+          C('Comisión Estimada',function(v){return com(v,'com');},function(o){return '';})],
+    ostats:[['Ventas',function(o){return fmtN(o.pol);}]],
+    osort:'com',vsort:'com',vsum:['pol'],vfix:function(v){v.rate=purdyRate(v.pol);v.bono=purdyBono(v.pol);v.com=purdyCalc(v.pol);},ofield:['pol','com'],
+    kpis:function(o){var T=sumF(o,['pol','com']);return K('Ventas',fmtN(T.pol),o.length+' oficinas · '+nv(o)+' vendedores')+K('Oficinas',fmtN(o.length),'')+K('Vendedores',fmtN(nv(o)),'');},
+    rules:function(){return rulesBox('Purdy','Mínimo <b>4 ventas al mes</b> para comisionar. <code>4–7 → ₡800 c/u</code> · <code>8–10 → ₡1.000 c/u + ₡5.000 bono</code> · <code>11+ → ₡1.500 c/u + ₡10.000 bono</code>.');}},
+};
+var SPLIST=['bncr','bcr','coopenae','coopeande','bp','purdy'];
+var SPNAME={bncr:'BNCR',bcr:'BCR',coopenae:'COOPENAE',coopeande:'Coope Ande',bp:'Banco Popular',purdy:'Purdy'};
+
+var state={sponsor:'bncr',year:null,month:null,sup:ALL,office:ALL,view:'office',q:''};
+var $=function(id){return document.getElementById(id);};
+var schOf=function(sp){return SCHEMAS[sp];};
+var sch=function(){return SCHEMAS[state.sponsor];};
+var D=function(){return DATA[state.sponsor];};
+function K(l,v,s){return '<div class="kpi"><div class="lbl">'+l+'</div><div class="val tnum">'+v+'</div>'+(s?'<div class="sub">'+s+'</div>':'')+'</div>';}
+function sumF(offs,fields){var t={};fields.forEach(function(f){t[f]=0;});offs.forEach(function(o){fields.forEach(function(f){t[f]+=(o[f]||0);});});return t;}
+function nv(offs){return offs.reduce(function(a,o){return a+o.vs.length;},0);}
+function mcnt(x){return (x&&x.m&&x.m[state.month])||0;}
+function bpCom(v){var p=[];if(v.ce)p.push('escala '+fmt(v.ce));if(v.cf)p.push('fijo '+fmt(v.cf));if(v.cm)p.push('Muvit '+fmt(v.cm));if(v.ct)p.push('Tiquitos '+fmt(v.ct));return '<span class="com" title="'+(p.join(' · ')||'sin comisión')+'">'+fmt(v.co)+'</span>';}
+
+/* ---------- Toolbar ---------- */
+var spWrap=$('sponsors');
+SPLIST.forEach(function(id){var b=document.createElement('button');
+  b.className='sp-btn'+(id===state.sponsor?' active':'');b.textContent=SPNAME[id];b.dataset.sp=id;
+  b.onclick=function(){selectSponsor(id);};spWrap.appendChild(b);});
+$('f-year').addEventListener('change',function(e){state.year=e.target.value;onYear();});
+$('f-month').addEventListener('change',function(e){state.month=e.target.value;onMonth();});
+$('f-sup').addEventListener('change',function(e){state.sup=e.target.value;onSup();});
+$('f-office').addEventListener('change',function(e){state.office=e.target.value;render();});
+$('view').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.view=b.dataset.v;
+  document.querySelectorAll('#view button').forEach(function(x){x.classList.toggle('active',x===b);});render();});
+var sT;$('search').addEventListener('input',function(e){clearTimeout(sT);sT=setTimeout(function(){state.q=e.target.value.trim().toLowerCase();render();},140);});
+var opt=function(val,label,selv){return '<option value="'+esc(val)+'"'+(val===selv?' selected':'')+'>'+esc(label)+'</option>';};
+
+function selectSponsor(id){
+  state.sponsor=id;state.sup=ALL;state.office=ALL;state.q='';$('search').value='';
+  body.dataset.sponsor=id;
+  document.querySelectorAll('.sp-btn').forEach(function(b){b.classList.toggle('active',b.dataset.sp===id);});
+  $('title').textContent=sch().title;
+  $('month-field').hidden=false;
+  $('view').style.display=sch().grid?'none':'';
+  var years=(D()&&D().years)||[];
+  if(!years.length){ setupEmpty(); return; }
+  var pf=prefs[id]||{};   // restaurar filtros usados la última vez en este sponsor
+  state.year=(pf.year!=null&&years.indexOf(pf.year)>=0)?pf.year:years[years.length-1];
+  $('f-year').innerHTML=years.slice().reverse().map(function(y){return opt(y,y,state.year);}).join('');
+  applyYear(pf);
+}
+/* fija mes/supervisor/oficina desde los filtros recordados, validando que existan */
+function applyYear(pf){
+  pf=pf||{};
+  var ms=(D().monthsByYear&&D().monthsByYear[state.year])||[];
+  state.month=(pf.month!=null&&ms.indexOf(pf.month)>=0)?pf.month:(ms.length?ms[ms.length-1]:null);
+  $('f-month').innerHTML=ms.slice().reverse().map(function(m){return opt(m,cap(m),state.month);}).join('');
+  var sa=supsAvailable();
+  state.sup=(pf.sup&&pf.sup!==ALL&&sa.indexOf(pf.sup)>=0)?pf.sup:ALL;
+  populateSups();
+  var offs=scopeOffices();
+  state.office=(pf.office&&pf.office!==ALL&&offs.some(function(o){return o.o===pf.office;}))?pf.office:ALL;
+  populateOffices();
+  render();
+}
+function savePrefs(){ if(!hasData())return;
+  prefs[state.sponsor]={year:state.year,month:state.month,sup:state.sup,office:state.office};
+  prefs._last=state.sponsor;
+  try{localStorage.setItem(LSPREF,JSON.stringify(prefs));}catch(e){}
+}
+function hasData(){var d=D();return !!(d&&d.years&&d.years.length);}
+function setupEmpty(){
+  $('f-year').innerHTML=''; $('f-month').innerHTML=''; $('f-sup').innerHTML=''; $('f-office').innerHTML='';
+  $('scope').innerHTML=''; $('kpis').innerHTML=''; $('rules').innerHTML='';
+  $('corte-sub').textContent='Sin datos';
+  $('content').innerHTML='<div class="empty"><div class="big">No hay datos cargados</div>'+
+    '<div>Usá <b>⬆ Importar datos</b> y elegí el <b>CSV</b> de la hoja “Ventas 2025-2026” (en Excel: Guardar como → CSV) para generar los rankings.<br>'+
+    'Opcional: <b>⬆ Oficinas</b> para cargar tu catálogo de oficinas por sponsor.</div></div>';
+}
+function onYear(){
+  var ms=(D().monthsByYear&&D().monthsByYear[state.year])||[];
+  state.month=ms.length?ms[ms.length-1]:null;
+  $('f-month').innerHTML=ms.slice().reverse().map(function(m){return opt(m,cap(m),state.month);}).join('');
+  state.sup=ALL;populateSups();state.office=ALL;populateOffices();render();
+}
+function onMonth(){ if(sch().period==='month'){state.sup=ALL;populateSups();state.office=ALL;populateOffices();} render(); }
+function onSup(){state.office=ALL;populateOffices();render();}
+function supsAvailable(){return sch().period==='month'?(D().supsByPeriod[state.year+'|'+state.month]||[]):(D().supsByYear[state.year]||[]);}
+function populateSups(){var s=supsAvailable();$('f-sup').innerHTML=opt(ALL,'Todos los supervisores',state.sup)+s.map(function(x){return opt(x,x,state.sup);}).join('');}
+function populateOffices(){var o=scopeOffices();$('f-office').innerHTML=opt(ALL,'Todas las oficinas ('+o.length+')',state.office)+o.map(function(x){return opt(x.o,x.o,state.office);}).join('');}
+
+/* ---------- Scope + merge ---------- */
+function cellKeys(){var sups=state.sup===ALL?supsAvailable():[state.sup];
+  return sch().period==='month'?sups.map(function(s){return state.year+'|'+state.month+'|'+s;}):sups.map(function(s){return state.year+'|'+s;});}
+function scopeOffices(){var cells=D().cells,lists=cellKeys().map(function(key){return cells[key];}).filter(Boolean);
+  if(lists.length===0)return [];if(lists.length===1)return lists[0];return mergeCells(lists);}
+function mergeCells(lists){var s=sch(),byO={};
+  lists.forEach(function(l){l.forEach(function(o){var a=byO[o.o];if(!a){a={o:o.o,_v:{},_w:{}};byO[o.o]=a;}
+    o.vs.forEach(function(v){var x=a._v[v.v];if(!x){x={v:v.v};s.vsum.forEach(function(f){x[f]=0;});if(s.wfield)x._w={};a._v[v.v]=x;}
+      s.vsum.forEach(function(f){x[f]=round2((x[f]||0)+(v[f]||0));});
+      if(s.wfield){var w=v[s.wfield]||{};for(var k in w)x._w[k]=(x._w[k]||0)+w[k];}});
+  });});
+  var out=[];for(var oname in byO){var a=byO[oname];var vs=[];
+    for(var vn in a._v){var x=a._v[vn];if(s.wfield){x[s.wfield]=x._w;delete x._w;}vs.push(x);}
+    if(s.vfix)vs.forEach(s.vfix);
+    vs.sort(function(p,q){return (q[s.vsort]||0)-(p[s.vsort]||0);});
+    var o={o:oname,vs:vs};s.ofield.forEach(function(f){o[f]=round2(vs.reduce(function(t,v){return t+(v[f]||0);},0));});
+    if(s.ototalFromV)o.total=vs.reduce(function(t,v){return t+(v.pol||0);},0);
+    if(s.wfield){var ow={};vs.forEach(function(v){var w=v[s.wfield]||{};for(var k in w)ow[k]=(ow[k]||0)+w[k];});o[s.wfield]=ow;}
+    out.push(o);}
+  out.sort(function(p,q){return (q[s.osort]||0)-(p[s.osort]||0);});return out;
+}
+
+/* oficinas que existen en el año (cualquier mes) para el supervisor filtrado */
+function expectedOffices(){
+  if(sch().period!=='month')return null;
+  var cells=D().cells,want={},sup=state.sup===ALL?null:state.sup,pre=state.year+'|';
+  for(var key in cells){if(key.indexOf(pre)!==0)continue;var p=key.split('|');if(sup&&p[2]!==sup)continue;
+    cells[key].forEach(function(o){want[o.o]=1;});}
+  // unir catálogo de oficinas si estamos en esa zona (o viendo Todos)
+  var dir=(curDir&&curDir[state.sponsor])||[];
+  if(dir.length){var inter=false;for(var i=0;i<dir.length;i++){if(want[dir[i]]){inter=true;break;}}
+    if(inter||state.sup===ALL){for(var j=0;j<dir.length;j++)want[dir[j]]=1;}}
+  return want;
+}
+/* ---------- Render ---------- */
+function scopeChips(){var c=['<span class="chip">'+SPNAME[state.sponsor]+'</span>'];
+  var cut=cutDate(); if(cut)c.push('<span class="chip chip-cut">📅 Ventas registradas hasta el '+cutLong()+'</span>');
+  c.push(sch().period==='month'?'<span>'+cap(state.month)+' '+state.year+'</span>':'<span>Año '+state.year+'</span>');
+  c.push('<span>Supervisor: <b>'+(state.sup===ALL?'Todos':esc(state.sup))+'</b></span>');
+  if(state.office!==ALL)c.push('<span>Oficina: <b>'+esc(state.office)+'</b></span>');return c.join('');}
+function render(){
+  if(!hasData()){ setupEmpty(); return; }
+  savePrefs();
+  var s=sch(),offs=scopeOffices();
+  $('title').textContent=s.title;
+  var cut=cutDate();
+  $('corte-sub').innerHTML=cut?('<b>Corte al '+cutShort()+'</b>'):(s.period==='month'?(cap(state.month)+' '+state.year):('Acumulado '+state.year));
+  $('scope').innerHTML=scopeChips();
+  $('kpis').innerHTML=offs.length?s.kpis(offs):'';
+  $('rules').innerHTML=s.rules();
+  var q=state.q;
+  if(!offs.length){$('content').innerHTML=emptyBox('Sin datos para este filtro.');return;}
+  if(state.office!==ALL){var o=find(offs,state.office);$('content').innerHTML=o?soloOffice(s,o):emptyBox('Esa oficina no tiene registros.');return;}
+  if(!s.grid&&state.view==='flat'){renderFlat(s,offs,q);return;}
+  var matched=q?offs.filter(function(o){return o.vs.some(function(v){return norm(v.v).includes(q);})||norm(o.o).includes(q);}):offs;
+  var head='<div class="section-head"><h2>Oficinas</h2><span class="count">'+(s.period==='year'?'ordenadas por pólizas':'ordenadas por comisión')+(q?' · '+matched.length+' con coincidencias':'')+'</span></div>';
+  $('content').innerHTML=head+offs.map(function(o,i){
+    var m=q&&(o.vs.some(function(v){return norm(v.v).includes(q);})||norm(o.o).includes(q));if(q&&!m)return '';
+    var open=i<3||m;
+    return '<details class="office" '+(open?'open':'')+' data-off="'+esc(o.o)+'"><summary>'+
+      '<span class="rank '+rankCls(i)+'">'+(i+1)+'</span>'+
+      '<span class="name">'+esc(o.o)+'<small>'+o.vs.length+' vendedor'+(o.vs.length!==1?'es':'')+'</small></span>'+
+      '<span class="stats">'+s.ostats.map(function(st){return '<span class="s"><span class="n tnum">'+st[1](o)+'</span><span class="k">'+st[0]+'</span></span>';}).join('')+
+      '<button class="imgbtn" title="Descargar imagen de esta oficina" onclick="downloadOffice(event,this)">⬇ img</button></span></summary>'+
+      '<div class="tscroll">'+(s.grid?gridTable(s,o,q):vtable(s,o,q))+'</div></details>';
+  }).join('')+(q&&matched.length===0?emptyBox('Sin coincidencias para “'+esc(state.q)+'”'):'');
+  // Oficinas sin activaciones en el mes
+  var exp=expectedOffices();
+  if(exp){var present={};offs.forEach(function(o){present[o.o]=1;});
+    var missing=[];for(var mo in exp){if(!present[mo]&&(!q||norm(mo).includes(q)))missing.push(mo);}
+    missing.sort();
+    if(missing.length){
+      var lbm=(D().lastByOfficeYear||{})[state.year]||{};
+      var mh='<div class="sin-head">Oficinas sin activaciones · '+cap(state.month)+' '+state.year+' ('+missing.length+')</div>'+
+        missing.map(function(o){
+          var lb=lbm[o];
+          var det=lb?('En '+state.year+', último registro: <b class="lastreg">'+cap(lb.mes)+' · '+esc(lb.ven)+' · '+esc(lb.prod)+'</b>')
+                    :('<b class="lastreg">En lo que lleva de '+state.year+' no se registran ventas</b>');
+          return '<details class="office noact" data-off="'+esc(o)+'"><summary>'+
+            '<span class="rank" style="background:var(--surface-3);color:var(--faint)">–</span>'+
+            '<span class="name">'+esc(o)+'<small>No hay activaciones al corte · '+det+'</small></span>'+
+            '<span class="stats"><span class="noact-tag">Sin activaciones</span>'+
+            '<button class="imgbtn" title="Descargar imagen de esta oficina" onclick="downloadOffice(event,this)">⬇ img</button></span>'+
+            '</summary></details>';}).join('');
+      $('content').insertAdjacentHTML('beforeend',mh);
+    }
+  }
+}
+function vtable(s,o,q){
+  return '<table><thead><tr><th>#</th><th class="l">Vendedor</th>'+s.cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'</tr></thead><tbody>'+
+    o.vs.map(function(v,j){return '<tr class="'+(q&&norm(v.v).includes(q)?'hit':'')+'"><td><span class="mini-rank '+rankCls(j)+'">'+(j+1)+'</span></td>'+
+      '<td class="l vn">'+esc(v.v)+(s.nameExtra?s.nameExtra(v):'')+'</td>'+
+      s.cols.map(function(c){return '<td class="tnum">'+c.get(v)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>'+
+    '<tfoot><tr><td class="l">Total</td><td></td>'+s.cols.map(function(c){return '<td class="tnum">'+c.foot(o)+'</td>';}).join('')+'</tr></tfoot></table>';
+}
+function gridTable(s,o,q){
+  var weeks=(DATA.coopenae.weeksByPeriod[state.year+'|'+state.month]||[]).slice();
+  var cell=function(c){if(!c)return '<td></td>';var cls=c>=2?'gok':'gno';return '<td class="gcell '+cls+'">'+c+'</td>';};
+  var head='<table class="grid"><thead><tr><th>#</th><th class="l">Vendedor</th>'+weeks.map(function(w){return '<th>Sem '+w+'</th>';}).join('')+'<th>Total</th><th>Comisión<br>Estimada</th></tr></thead><tbody>';
+  var rows=o.vs.map(function(v,j){var tot=weeks.reduce(function(a,w){return a+(v.w[w]||0);},0);
+    return '<tr class="'+(q&&norm(v.v).includes(q)?'hit':'')+'"><td><span class="mini-rank '+rankCls(j)+'">'+(j+1)+'</span></td>'+
+      '<td class="l vn">'+esc(v.v)+'</td>'+weeks.map(function(w){return cell(v.w[w]||0);}).join('')+
+      '<td class="tnum"><b>'+tot+'</b></td><td class="tnum"><span class="com">'+fmt(v.com)+'</span></td></tr>';}).join('');
+  var foot='<tfoot><tr><td class="l">Total</td><td></td>'+weeks.map(function(w){return '<td class="tnum">'+(o.w[w]||0)+'</td>';}).join('')+'<td class="tnum"><b>'+fmtN(o.pol)+'</b></td><td class="tnum"></td></tr></tfoot>';
+  return head+rows+'</tbody>'+foot+'</table>'+
+    '<div class="glegend"><span><i class="gok"></i> ≥2 ventas (comisiona)</span><span><i class="gno"></i> &lt;2 (no comisiona)</span></div>';
+}
+function soloOffice(s,o){
+  return '<div class="solo" data-off="'+esc(o.o)+'"><div class="solohead"><span class="name">'+esc(o.o)+'</span>'+
+    '<span class="stats">'+s.ostats.map(function(st){return '<span class="s"><span class="n tnum">'+st[1](o)+'</span><span class="k">'+st[0]+'</span></span>';}).join('')+
+    '<button class="imgbtn" title="Descargar imagen" onclick="downloadOffice(event,this)">⬇ img</button></span></div>'+
+    '<div class="tscroll">'+(s.grid?gridTable(s,o,state.q):vtable(s,o,state.q))+'</div></div>';
+}
+function renderFlat(s,offs,q){
+  var vs=[];offs.forEach(function(o){o.vs.forEach(function(v){var c={};for(var k in v)c[k]=v[k];c.oficina=o.o;vs.push(c);});});
+  vs.sort(function(a,b){return (b[s.vsort]||0)-(a[s.vsort]||0);});
+  var shown=q?vs.filter(function(v){return norm(v.v).includes(q);}):vs;
+  $('content').innerHTML='<div class="section-head"><h2>Ranking de vendedores</h2><span class="count">'+shown.length+' de '+vs.length+'</span></div>'+
+    '<div class="solo"><div class="tscroll"><table><thead><tr><th>#</th><th class="l">Vendedor</th><th class="l">Oficina</th>'+s.cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'</tr></thead><tbody>'+
+    (shown.map(function(v){var gi=vs.indexOf(v);return '<tr class="'+(q&&norm(v.v).includes(q)?'hit':'')+'"><td><span class="mini-rank '+rankCls(gi)+'">'+(gi+1)+'</span></td>'+
+      '<td class="l vn">'+esc(v.v)+(s.nameExtra?s.nameExtra(v):'')+'</td><td class="l office-cell">'+esc(v.oficina)+'</td>'+
+      s.cols.map(function(c){return '<td class="tnum">'+c.get(v)+'</td>';}).join('')+'</tr>';}).join('')||emptyRow(s.cols.length+3))+'</tbody></table></div></div>';
+}
+function find(a,name){for(var i=0;i<a.length;i++)if(a[i].o===name)return a[i];return null;}
+
+/* ---------- Rules ---------- */
+function rulesBox(name,inner){return '<details class="rules"><summary>Cómo se calcula el ranking '+name+'</summary><div class="rules-body">'+inner+'</div></details>';}
+function rulesBNCR(){
+  var pk=state.year+'|'+state.month,n=(DATA.bncr.notes||{})[pk]||{};
+  var pct=Object.keys(DATA.pct).map(function(k2){return '<span>'+esc(k2)+' <b>'+Math.round(DATA.pct[k2]*100)+'%</b></span>';}).join('');
+  var usd=n.usd_pol?'<br><b>Dólares (mes):</b> '+n.usd_pol+' póliza(s) · $'+fmtN(Math.round(n.usd_monto))+' colonizadas a ₡'+DATA.rate+'.':'';
+  var rdh=n.rdh_anual?'<br><b>Anualizadas (mes):</b> '+n.rdh_anual+' póliza(s) de RDH / Protección Hospitalaria; comisión sobre prima ÷12, aporte sobre el monto anual.':'';
+  var ref=n.sinpct_total?'<div class="note">⚠ '+n.sinpct_total+' venta(s) con producto sin % se tomaron con 0% de aporte.</div>':'';
+  return rulesBox('BNCR','<b>Prima acumulada.</b> Suma de <code>Prima</code>; los dólares se colonizan al TC del día (₡'+DATA.rate+').<br>'+
+    '<b>Comisión.</b> Escala sobre la prima acumulada mensual: <code>0–6 000 → 0%</code> · <code>6 001–50 000 → 50%</code> · <code>50 001–100 000 → 100%</code> · <code>100 001+ → 150%</code> (RDH y Protección Hospitalaria anuales usan prima ÷12). <b>Tiquitos</b> paga <code>₡950 por activación</code> aparte.<br>'+
+    '<b>Aporte Meta.</b> % del producto × su prima.'+rdh+usd+
+    '<b style="display:block;margin-top:10px">% Aporte por producto</b><div class="pct-grid">'+pct+'</div>')+ref;
+}
+function rulesCOOP(){
+  var unk=(DATA.coopenae.unk||{})[state.year+'|'+state.month];
+  var un=unk&&Object.keys(unk).length?'<div class="note">⚠ Productos sin tarifa este mes: '+Object.keys(unk).map(function(p){return esc(p)+' ('+unk[p]+')';}).join(', ')+'.</div>':'';
+  return rulesBox('COOPENAE','<b>Comisión semanal.</b> Cada semana con <b>≥ 2 ventas</b> paga (verde); menos de 2 no paga (rojo). Pago por póliza de la semana: <code>RDH ₡3.000</code> · <code>AP ₡3.000</code> · <code>FRE ₡4.000</code> · <code>Asistencias ₡500</code>. La comisión del mes suma las semanas en verde.')+un;
+}
+function rulesBP(){
+  var unk=(DATA.bp.unk||{})[state.year+'|'+state.month];
+  var un=unk&&Object.keys(unk).length?'<div class="note">⚠ Productos sin regla de comisión este mes: '+Object.keys(unk).map(function(p){return esc(p)+' ('+unk[p]+')';}).join(', ')+'. Suman pólizas pero no comisión.</div>':'';
+  return rulesBox('Banco Popular','<b>Escala sobre prima acumulada</b> (Bolso Protegido, BP Multisaldo, BP Siempre Contigo): <code>0–6 000 → 0%</code> · <code>6 001–50 000 → 0,5%</code> · <code>50 001+ → 1%</code>.<br>'+
+    '<b>Protección 360</b> pago fijo por activaciones: <code>3 → ₡1.500</code> · <code>4–7 → ₡1.800</code> · <code>8–15 → ₡2.000</code> · <code>16+ → ₡2.500</code> c/u.<br>'+
+    '<b>Muvit</b> 5% sobre dólares colonizados al TC BCCR. <b>Tiquitos BP</b> ₡950 por activación.')+un;
+}
+function emptyRow(c){return '<tr><td colspan="'+c+'" style="text-align:center;padding:30px;color:var(--faint)">Sin coincidencias</td></tr>';}
+function emptyBox(m){return '<div class="empty"><div class="big">'+m+'</div></div>';}
+
+/* ---------- Import / autosave ---------- */
+function parseCSV(t){var rows=[],i=0,field='',row=[],q=false;
+  for(;i<t.length;i++){var c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){field+='"';i++;}else q=false;}else field+=c;}
+    else{if(c==='"')q=true;else if(c===','){row.push(field);field='';}else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}else if(c==='\r'){}else field+=c;}}
+  if(field.length||row.length){row.push(field);rows.push(row);}return rows;}
+function overlay(msg){var o=$('overlay');o.querySelector('.ov-msg').textContent=msg;o.hidden=false;}
+function hideOverlay(){$('overlay').hidden=true;}
+function applyData(d,saveIt){DATA=d;if(saveIt){try{localStorage.setItem(LSKEY,JSON.stringify(d));}catch(e){toast('No se pudo autoguardar (datos grandes); se mantienen en esta sesión.');}}
+  updateStamp();selectSponsor('bncr');}
+function updateStamp(){var g=DATA.generated?('Importado '+DATA.generated):'Datos de ejemplo';$('corte-tc').innerHTML='TC <b>₡'+DATA.rate+'</b> · '+g;}
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(function(){t.classList.remove('on');},3200);}
+function doImport(file){
+  var rate=parseFloat($('f-tc').value)||510;
+  var name=file.name.toLowerCase();
+  overlay('Leyendo '+file.name+'…');
+  setTimeout(function(){
+    if(name.endsWith('.csv')){
+      var rd=new FileReader();
+      rd.onload=function(){try{overlay('Procesando datos…');setTimeout(function(){
+        var rows=parseCSV(rd.result);salesRows=rows;var d=RankProcessor.process(rows,rate,curDir);hideOverlay();applyData(d,true);toast('Datos importados: '+(d.generated)+' · '+SPLIST.length+' sponsors.');},30);
+      }catch(e){hideOverlay();toast('Error al procesar: '+e.message);}};
+      rd.onerror=function(){hideOverlay();toast('No se pudo leer el archivo.');};
+      rd.readAsText(file);
+    } else if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+      if(file.size>45*1024*1024){ if(!confirm('El archivo pesa '+Math.round(file.size/1048576)+'MB. Procesar Excel grande en el navegador puede tardar mucho o fallar. Para el archivo maestro se recomienda exportar la hoja "Ventas 2025-2026" como CSV. ¿Continuar igual?')){hideOverlay();return;} }
+      loadXLSX(function(){
+        var rd=new FileReader();
+        rd.onload=function(){try{overlay('Procesando Excel… (puede tardar)');setTimeout(function(){
+          var wb=XLSX.read(new Uint8Array(rd.result),{type:'array',dense:true});
+          var sh=wb.SheetNames.indexOf('Ventas 2025-2026')>=0?'Ventas 2025-2026':wb.SheetNames[0];
+          var rows=XLSX.utils.sheet_to_json(wb.Sheets[sh],{header:1,raw:false});salesRows=rows;
+          var d=RankProcessor.process(rows,rate,curDir);hideOverlay();applyData(d,true);toast('Datos importados desde Excel: '+d.generated);},30);
+        }catch(e){hideOverlay();toast('Error al procesar Excel: '+e.message);}};
+        rd.readAsArrayBuffer(file);
+      });
+    } else {hideOverlay();toast('Formato no soportado. Usa CSV o Excel.');}
+  },30);
+}
+var _xlsxLoaded=false;
+function loadXLSX(cb){if(_xlsxLoaded&&window.XLSX){cb();return;}
+  overlay('Cargando lector de Excel…');var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=function(){_xlsxLoaded=true;cb();};s.onerror=function(){hideOverlay();toast('No se pudo cargar el lector de Excel.');};
+  document.head.appendChild(s);}
+$('f-import').addEventListener('change',function(e){var f=e.target.files[0];if(f)doImport(f);e.target.value='';});
+$('f-offices').addEventListener('change',function(e){var f=e.target.files[0];if(f)importOffices(f);e.target.value='';});
+function importOffices(file){
+  var name=file.name.toLowerCase();
+  overlay('Leyendo catálogo de oficinas…');
+  var finish=function(aoa){
+    try{
+      var dir=RankProcessor.buildDirectory(aoa),tot=0;for(var k in dir)tot+=dir[k].length;
+      if(!tot){hideOverlay();toast('No se reconocieron oficinas. Las columnas deben ser BANCO POPULAR, BCR, BNCR, COOPEANDE, COOPENAE, Purdy.');return;}
+      curDir=dir; try{localStorage.setItem(LSDIR,JSON.stringify(dir));}catch(e){}
+      if(salesRows){
+        overlay('Aplicando catálogo y reprocesando…');
+        setTimeout(function(){var rate=parseFloat($('f-tc').value)||510;var d=RankProcessor.process(salesRows,rate,curDir);hideOverlay();applyData(d,true);toast('Catálogo aplicado: '+tot+' oficinas en '+Object.keys(dir).length+' sponsors.');},30);
+      } else {
+        DATA.directory=dir; try{localStorage.setItem(LSKEY,JSON.stringify(DATA));}catch(e){}
+        hideOverlay(); populateOffices(); render();
+        toast('Catálogo guardado: '+tot+' oficinas. Reimportá las ventas para reagrupar por oficina.');
+      }
+    }catch(err){hideOverlay();toast('Error leyendo oficinas: '+((err&&err.message)||err));}
+  };
+  setTimeout(function(){
+    if(name.endsWith('.csv')){var rd=new FileReader();rd.onload=function(){finish(parseCSV(rd.result));};rd.onerror=function(){hideOverlay();toast('No se pudo leer el archivo.');};rd.readAsText(file);}
+    else{loadXLSX(function(){var rd=new FileReader();rd.onload=function(){try{var wb=XLSX.read(new Uint8Array(rd.result),{type:'array'});var aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false});finish(aoa);}catch(e){hideOverlay();toast('Error leyendo Excel: '+e.message);}};rd.readAsArrayBuffer(file);});}
+  },30);
+}
+
+/* ---------- Descargar imagen de oficina ---------- */
+var _h2cLoaded=false;
+function loadH2C(cb){if(_h2cLoaded&&window.html2canvas){cb();return;}
+  var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s.onload=function(){_h2cLoaded=true;cb();};s.onerror=function(){toast('No se pudo cargar el generador de imágenes.');};document.head.appendChild(s);}
+window.downloadOffice=function(ev,btn){
+  ev.preventDefault();ev.stopPropagation();
+  var el=btn.closest('details')||btn.closest('.solo');if(!el)return;
+  if(el.tagName==='DETAILS')el.open=true;
+  toast('Generando imagen…');
+  loadH2C(function(){
+    setTimeout(function(){
+      var cs=getComputedStyle(body);
+      var bg=(cs.getPropertyValue('--surface-2')||'#f4f6fb').trim()||'#f4f6fb';
+      var fg=(cs.getPropertyValue('--fg')||'#172031').trim();
+      var muted=(cs.getPropertyValue('--muted')||'#5c6779').trim();
+      var accent=(cs.getPropertyValue('--accent')||'#c0392b').trim();
+      var border=(cs.getPropertyValue('--border')||'#e0e6ef').trim();
+      var w=Math.max(el.offsetWidth,640);
+      var corte=cutShort();
+      // Contenedor fuera de pantalla con encabezado + copia de la tarjeta
+      var wrap=document.createElement('div');
+      wrap.setAttribute('data-sponsor', body.dataset.sponsor||'');
+      wrap.style.cssText='position:fixed;left:-99999px;top:0;z-index:-1;box-sizing:border-box;'
+        +'width:'+(w+48)+'px;padding:24px;background:'+bg+';font-family:'+cs.fontFamily+';';
+      var head=document.createElement('div');
+      head.style.cssText='margin:0 0 16px;padding:0 2px 14px;border-bottom:2px solid '+accent+';';
+      head.innerHTML='<div style="font-size:19px;font-weight:800;color:'+fg+';letter-spacing:-.01em;">Ranking de Colocación · '+esc(SPNAME[state.sponsor])+'</div>'
+        +'<div style="font-size:13px;font-weight:600;color:'+muted+';margin-top:3px;">'+esc(cap(state.month)||'')+' '+esc(state.year||'')+(state.sup!==ALL?(' · Supervisor: '+esc(state.sup)):'')+'</div>'
+        +(corte?('<div style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:'+accent+';background:'+bg+';border:1px solid '+border+';border-radius:999px;padding:4px 12px;">📅 Corte al '+esc(corte)+'</div>'):'');
+      var clone=el.cloneNode(true);
+      if(clone.tagName==='DETAILS')clone.open=true;
+      var ib=clone.querySelectorAll('.imgbtn');for(var i=0;i<ib.length;i++)ib[i].remove();
+      clone.style.border='1px solid '+border;clone.style.borderRadius='12px';clone.style.background=(cs.getPropertyValue('--surface')||'#fff').trim();
+      wrap.appendChild(head);wrap.appendChild(clone);document.body.appendChild(wrap);
+      var scale=Math.max(3,(window.devicePixelRatio||1)*2);
+      function done(){try{document.body.removeChild(wrap);}catch(e){}}
+      try{
+        html2canvas(wrap,{backgroundColor:bg,scale:scale,useCORS:true,logging:false})
+        .then(function(canvas){
+          var off=(el.getAttribute('data-off')||'ranking').replace(/[^\w\-]+/g,'_');
+          var a=document.createElement('a');a.download=off+'_'+state.year+(state.month?'_'+state.month:'')+'.png';
+          a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();
+          done();toast('Imagen descargada (PNG alta calidad).');
+        }).catch(function(e){done();toast('No se pudo generar la imagen: '+((e&&e.message)||e));});
+      }catch(e){done();toast('No se pudo generar la imagen: '+((e&&e.message)||e));}
+    },140);
+  });
+};
+
+/* ---------- init ---------- */
+(function init(){
+  var stale=false;
+  try{var raw=localStorage.getItem(LSKEY);if(raw){var d=JSON.parse(raw);
+    if(d&&d.bncr){ if(d.schema===SCHEMA){DATA=d;} else {stale=true;localStorage.removeItem(LSKEY);} }}}catch(e){}
+  curDir=(DATA&&DATA.directory)||{};
+  try{var rd2=localStorage.getItem(LSDIR);if(rd2){var pd=JSON.parse(rd2);if(pd&&typeof pd==='object'&&Object.keys(pd).length)curDir=pd;}}catch(e){}
+  // normalizar catálogo (alias + de-dup) por si quedó uno viejo guardado, y regrabarlo limpio
+  try{ if(window.RankProcessor&&RankProcessor.aliasDirectory){ var before=JSON.stringify(curDir); curDir=RankProcessor.aliasDirectory(curDir);
+    if(JSON.stringify(curDir)!==before){try{localStorage.setItem(LSDIR,JSON.stringify(curDir));}catch(e){}} } }catch(e){}
+  DATA.directory=curDir;
+  try{var rp=localStorage.getItem(LSPREF);if(rp){var pp=JSON.parse(rp);if(pp&&typeof pp==='object')prefs=pp;}}catch(e){}
+  updateStamp();
+  var start=(prefs._last&&SCHEMAS[prefs._last])?prefs._last:'bncr';
+  selectSponsor(start);
+  if(stale)setTimeout(function(){toast('Los datos guardados eran de una versión anterior. Volvé a importar tu CSV para actualizar.');},300);
+})();
+
+</script>
+
+</body>
+</html>
